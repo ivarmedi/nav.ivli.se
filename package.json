@@ -1,0 +1,62 @@
+{
+  "name": "flygsim",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "node download-and-parse.js; vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@turf/along": "^6.5.0",
+    "@turf/bbox": "^6.5.0",
+    "@turf/bearing": "^6.5.0",
+    "@turf/distance": "^6.5.0",
+    "@turf/helpers": "^6.5.0",
+    "@turf/length": "^6.5.0",
+    "@turf/line-chunk": "^6.5.0",
+    "@turf/line-intersect": "^6.5.0",
+    "@turf/line-segment": "^6.5.0",
+    "@turf/line-slice-along": "^6.5.0",
+    "@turf/nearest-point": "^6.5.0",
+    "axios": "^1.3.3",
+    "circle-to-polygon": "^2.2.0",
+    "core-js": "^3.8.3",
+    "proj4": "^2.8.1",
+    "raw-loader": "^4.0.2",
+    "vue": "^3.2.13",
+    "vue3-openlayers": "^0.1.71"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.16",
+    "@babel/eslint-parser": "^7.12.16",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-eslint": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-vue": "^8.0.3",
+    "query-overpass": "^1.5.5",
+    "xml2json": "^0.12.0",
+    "yauzl": "^2.10.0"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/vue3-essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "@babel/eslint-parser"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
+}
