@@ -339,29 +339,33 @@ export default {
     }
 
     const getWeatherAtCoordinates = (coordinates, projection="EPSG:4326") => {
-      console.log("Get weather at", coordinates)
-      if (projection != "EPSG:4326")
-        coordinates = proj4(projection, "EPSG:4326", coordinates)
+      return new Promise((resolve, reject) => {
+        console.log("Get weather at", coordinates)
+        if (projection != "EPSG:4326")
+          coordinates = proj4(projection, "EPSG:4326", coordinates)
 
-      let url = `https://opendata-download-metanalys.smhi.se/api/category/mesan1g/version/2/geotype/point/lon/${coordinates[0].toFixed(2)}/lat/${coordinates[1].toFixed(2)}/data.json`
+        let url = `https://opendata-download-metanalys.smhi.se/api/category/mesan1g/version/2/geotype/point/lon/${coordinates[0].toFixed(2)}/lat/${coordinates[1].toFixed(2)}/data.json`
 
-      lastWeatherFetch.value = new Date()
+        lastWeatherFetch.value = new Date()
 
-      axios
-        .get(url)
-        .then(response => {
-          let properties = {
-            "windSpeed": Math.round(response.data.timeSeries[0].parameters.find(p => p.name === "ws").values[0] * 1.94384449),
-            "windDirection": response.data.timeSeries[0].parameters.find(p => p.name === "wd").values[0],
-            "temperature": response.data.timeSeries[0].parameters.find(p => p.name === "t").values[0],
+        axios
+          .get(url)
+          .then(response => {
+            let properties = {
+              "windSpeed": Math.round(response.data.timeSeries[0].parameters.find(p => p.name === "ws").values[0] * 1.94384449),
+              "windDirection": response.data.timeSeries[0].parameters.find(p => p.name === "wd").values[0],
+              "temperature": response.data.timeSeries[0].parameters.find(p => p.name === "t").values[0],
+            }
+
+            let feature = point(coordinates, properties)
+
+            weather.value.features.push(feature)
+            resolve()
           }
-
-          let feature = point(coordinates, properties)
-
-          weather.value.features.push(feature)
-          calculateLineInfo(selectedFeatures.value.array_[0])
-        }
-      )
+        ).catch(err => {
+          reject(err)
+        })
+      })
     }
 
     const findIntersects = (segment, altitude = 0) => {
@@ -435,10 +439,6 @@ export default {
       selectedFeatures.value.push(event.feature)
       modifyEnable.value = true
       drawEnable.value = false
-
-//      for (var idx in journeyLegs.value.features) {
-//        console.log("A", journeyLegs.value.features[idx].geometry.coordinates)
-//      }
     }
 
     Math.radians = function(degrees) {
@@ -499,6 +499,7 @@ export default {
     }
 
     const handleClickGetWeather = () => {
+      let promises = []
       if (lineSegments.value.features.length == 0)
         return
 
@@ -508,7 +509,11 @@ export default {
           s.properties.temperature = null
 
           let coordinates = s.geometry.coordinates
-          getWeatherAtCoordinates(coordinates[1])
+          promises.push(getWeatherAtCoordinates(coordinates[1]))
+      })
+
+      Promise.all(promises).then(() => {
+        calculateLineInfo(selectedFeatures.value.array_[0])
       })
     }
 
