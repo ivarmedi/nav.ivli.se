@@ -239,6 +239,7 @@ import proj4 from 'proj4'
 import GeoJSON from 'ol/format/GeoJSON.js';
 import geoJson from '../assets/geojson/es.json'
 import geoJsonCities from '../assets/geojson/cities.json'
+import * as geomag from 'geomag'
 
 const format = new GeoJSON()
 
@@ -340,13 +341,14 @@ export default {
 
     const getWeatherAtCoordinates = (coordinates, projection="EPSG:4326") => {
       return new Promise((resolve, reject) => {
-        console.log("Get weather at", coordinates)
         if (projection != "EPSG:4326")
           coordinates = proj4(projection, "EPSG:4326", coordinates)
 
         let url = `https://opendata-download-metanalys.smhi.se/api/category/mesan1g/version/2/geotype/point/lon/${coordinates[0].toFixed(2)}/lat/${coordinates[1].toFixed(2)}/data.json`
 
         lastWeatherFetch.value = new Date()
+
+        const field = geomag.field( coordinates[1], coordinates[0] );
 
         axios
           .get(url)
@@ -355,6 +357,7 @@ export default {
               "windSpeed": Math.round(response.data.timeSeries[0].parameters.find(p => p.name === "ws").values[0] * 1.94384449),
               "windDirection": response.data.timeSeries[0].parameters.find(p => p.name === "wd").values[0],
               "temperature": response.data.timeSeries[0].parameters.find(p => p.name === "t").values[0],
+              "variation": Math.round(field.declination),
             }
 
             let feature = point(coordinates, properties)
@@ -437,6 +440,7 @@ export default {
     const drawend = (event) => {
       calculateLineInfo(event.feature)
       selectedFeatures.value.push(event.feature)
+      handleClickGetWeather()
       modifyEnable.value = true
       drawEnable.value = false
     }
@@ -507,6 +511,7 @@ export default {
           s.properties.windDirection = null
           s.properties.windSpeed = null
           s.properties.temperature = null
+          s.properties.variation = null
 
           let coordinates = s.geometry.coordinates
           promises.push(getWeatherAtCoordinates(coordinates[1]))
@@ -538,7 +543,6 @@ export default {
 
         journeyLegs.value.features[idx] = feature
 
-        segment.geometry["coordinates3857"] = segment.geometry.coordinates.map(c => proj4('EPSG:4326', 'EPSG:3857', c))
         segment["trueTrack"] = parseInt(bearingToAzimuth(bearing(_c[0], _c[1])))
 
         if (segment["trueTrack"] === 0)
@@ -554,6 +558,9 @@ export default {
 
           if (!oldValues["temperature"])
             oldValues["temperature"] = closestWeatherReport.properties.temperature
+
+          if (!oldValues["variation"])
+            oldValues["variation"] = closestWeatherReport.properties.variation
         }
 
         segment["windDirection"] = oldValues["windDirection"] || 0
@@ -572,7 +579,7 @@ export default {
         if (segment["trueHeading"] > 360)
           segment["trueHeading"] = segment["trueHeading"] - 360
 
-        segment["variation"] = oldValues["variation"] || 6
+        segment["variation"] = oldValues["variation"] || 0
         segment["magneticHeading"] = segment["trueHeading"] + (segment["variation"] * -1)
 
         if (segment["magneticHeading"] < 0)
@@ -608,17 +615,6 @@ export default {
         segment["firstPoi"] = firstPoi
         segment["secondPoi"] = secondPoi
         segment["description"] = `${firstPoi.properties.name} till ${secondPoi.properties.name}`
-        segment["lastWeatherFetch"] = oldValues["lastWeatherFetch"] || null;
-
-        if (!oldValues["lastWeatherFetch"] || new Date() - oldValues["lastWeatherFetch"] > (300 * 1000)) {
-          segment["lastWeatherFetch"] = new Date()
-
-          if (segment["windDirection"] == 0)
-            segment["windDirection"] = weather.value["windDirection"]
-
-          if (oldValues["windSpeed"] == 0)
-            oldValues["windSpeed"] = weather.value["windSpeed"]
-        }
 
         segment["previousTrueTrack"] = 0
         let now = new Date();
