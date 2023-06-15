@@ -254,7 +254,7 @@ export default {
     const features = format.readFeatures(geoJson, { featureProjection: "ESPG:4326" })
     const cities = format.readFeatures(geoJsonCities, { featureProjection: "ESPG:4326" })
 
-    const flightTiles = ref('https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=2303/aero/latest')
+    const flightTiles = ref('https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=2306/aero/latest')
 
     const showFlightOverlay = ref(true)
     const drawEnable = ref(true)
