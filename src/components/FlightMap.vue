@@ -243,6 +243,20 @@ import * as geomag from 'geomag'
 
 const format = new GeoJSON()
 
+const airacCycleDurationDays = 28
+
+const airacGetEffectiveDate = () => {
+  const serial = Math.floor((new Date() / 1000) / (airacCycleDurationDays * 24 * 60 * 60))
+  const days = serial * airacCycleDurationDays;
+  let date = new Date(0)
+  return new Date(date.setDate(date.getDate() + days))
+}
+
+const airacGetOrdinal = (date) => {
+  const dayOfYear = Math.floor((date - new Date(date.getUTCFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+  return String(Math.floor((dayOfYear - 1) / airacCycleDurationDays) + 1).padStart(2, '0');
+}
+
 export default {
   setup() {
     const map = ref(null)
@@ -254,7 +268,10 @@ export default {
     const features = format.readFeatures(geoJson, { featureProjection: "ESPG:4326" })
     const cities = format.readFeatures(geoJsonCities, { featureProjection: "ESPG:4326" })
 
-    const flightTiles = ref('https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=2306/aero/latest')
+    const yy = new Date().getUTCFullYear().toString().substr(-2)
+    const airacCycle = yy + airacGetOrdinal(airacGetEffectiveDate())
+
+    const flightTiles = ref(`https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=${airacCycle}/aero/latest`)
 
     const showFlightOverlay = ref(true)
     const drawEnable = ref(true)
@@ -275,7 +292,6 @@ export default {
     const lineSegments = ref({
       features: []
     })
-
 
     const airportsCollection = featureCollection(features.filter(f => f.getProperties().type === 'airport')
       .map(f => point(
