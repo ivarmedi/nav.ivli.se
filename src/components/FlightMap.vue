@@ -80,7 +80,7 @@
                     </ol-style-circle>
                     <ol-style-fill color="black" :width="1"></ol-style-fill>
                     <ol-style-stroke color="rgba(0,0,0,0)" :width="1"></ol-style-stroke>
-                    <ol-style-text :text="'!\n\n' + intersect.values_.name" :offsetY="12" :rotation="intersect.values_.trueTrack * Math.PI / 180">
+                    <ol-style-text :text="'⚠️\n\n' + intersect.values_.name" :offsetY="12" :rotation="intersect.values_.trueTrack * Math.PI / 180">
                       <ol-style-fill color="black" :width="4"></ol-style-fill>
                       <ol-style-stroke color="rgba(0,0,0,0.2)" :width="1"></ol-style-stroke>
                     </ol-style-text>
@@ -187,7 +187,12 @@
       <td :title="feature.properties.magneticHeading + '°'">{{ Math.round(feature.properties.magneticHeading) }}°</td>
       <td><input class="char3" :tabindex="(idx * 10) + 6" type="text" v-model="feature.properties.deviation" @change="handleInputChange" />°</td>
       <td :title="feature.properties.compassHeading + '°'">{{ Math.round(feature.properties.compassHeading) }}°</td>
-      <td class="wide">{{ feature.properties.description }}</td>
+      <td class="left wide">
+        <span v-if="feature.properties.intersects.length" :title="feature.properties.intersectsDescription" :alt="feature.properties.intersectsDescription" class="pointer">
+          ⚠️
+        </span>
+        {{ feature.properties.description }}
+      </td>
       <td :title="feature.properties.distance + ' nm'">{{ feature.properties.distance.toFixed(2) }} nm</td>
       <td :title="feature.properties.GS + ' kt'">{{ Math.round(feature.properties.GS) }} kt</td>
       <td :title="feature.properties.time + ' h'">{{ Math.round(feature.properties.time * 60) }} m</td>
@@ -393,12 +398,13 @@ export default {
       })
     }
 
-    const findIntersects = (segment, altitude = 0) => {
+    const findIntersects = (segment) => {
       let geometry = segment.geometry
       let _intersects = []
 
       const coordinates = geometry.coordinates
       const extent = bbox(geometry)
+      const altitude = segment['altitude']
       const nearbyfeatures = features.filter(f => f.getGeometry().intersectsExtent(extent))
 
       const espg4326ls = lineString(coordinates.map(c => proj4('EPSG:3857', 'EPSG:4326', c)))
@@ -594,6 +600,8 @@ export default {
         segment["TAS"] = oldValues["TAS"] || 100
         segment["windCorrectionAngle"] = Math.degrees(Math.asin((segment["windSpeed"] / segment["TAS"]) * Math.sin(segment["windAngle"])))
         segment["trueHeading"] = segment["trueTrack"] + segment["windCorrectionAngle"]
+        segment["intersects"] = findIntersects(segment)
+        segment["intersectsDescription"] = `Passerar\n${segment["intersects"].map(i => i.values_.name).join('\n')}`
 
         if (segment["trueHeading"] < 0)
           segment["trueHeading"] = 360 + segment["trueHeading"]
@@ -689,7 +697,7 @@ export default {
         }
 
         accumulatedTime += segment["time"]
-        intersects.value.push(...findIntersects(segment, feature.properties.altitude))
+        intersects.value.push(...segment['intersects'])
       })
 
       routeDistance.value = getLength(geometry)
@@ -812,6 +820,11 @@ table#routePlan td.wide {
   width: 24%;
 }
 
+table#routePlan td.left {
+  text-align: left;
+  padding-left: 5px;
+}
+
 td {
   border-right: 1px solid #eee;
   border-bottom: 1px solid #eee;
@@ -822,6 +835,10 @@ td {
 .zoom {
   bottom: 10px !important;
   right: 10px !important;
+}
+
+.pointer {
+  cursor: default;
 }
 
 .zoom button {
