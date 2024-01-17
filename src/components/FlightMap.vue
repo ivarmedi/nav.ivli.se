@@ -268,8 +268,14 @@ export default {
     const features = format.readFeatures(geoJson, { featureProjection: "ESPG:4326" })
     const cities = format.readFeatures(geoJsonCities, { featureProjection: "ESPG:4326" })
 
-    const yy = new Date().getUTCFullYear().toString().substr(-2)
-    const airacCycle = yy + airacGetOrdinal(airacGetEffectiveDate())
+    const airacOrdinal = airacGetOrdinal(airacGetEffectiveDate())
+    let yy = new Date().getUTCFullYear().toString().substr(-2)
+
+    if (parseInt(airacOrdinal) === 13) {
+      yy -= 1
+    }
+
+    let airacCycle = yy + airacOrdinal
 
     const flightTiles = ref(`https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=${airacCycle}/aero/latest`)
 
