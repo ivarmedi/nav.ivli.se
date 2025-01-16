@@ -13,6 +13,8 @@ const zip_filename = path.join(tmpdir, "ofmx.zip")
 const ofmx_filename = path.join(tmpdir, "ofmx.xml")
 const assets_dir = "src/assets/geojson"
 
+const airacGetIdentifier = require('./src/helpers/airac.js')
+
 const featureCollection = {
   "type": "FeatureCollection",
   "features": []
@@ -287,7 +289,8 @@ async function download_overpass() {
 
 async function download_ofmx() {
   return new Promise((resolve, reject) => {
-    const url = "https://snapshots.openflightmaps.org/live/2213/ofmx/esaa/latest/ofmx_es.zip"
+    const airac = airacGetIdentifier(new Date())
+    const url = `https://snapshots.openflightmaps.org/live/${airac}/ofmx/esaa/latest/ofmx_es.zip`
 
     // Download open flight data and parse it into geojson
     axios({

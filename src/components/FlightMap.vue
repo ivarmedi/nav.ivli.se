@@ -245,22 +245,9 @@ import GeoJSON from 'ol/format/GeoJSON.js';
 import geoJson from '../assets/geojson/es.json'
 import geoJsonCities from '../assets/geojson/cities.json'
 import * as geomag from 'geomag'
+import airacGetIdentifier from '../helpers/airac'
 
 const format = new GeoJSON()
-
-const airacCycleDurationDays = 28
-
-const airacGetEffectiveDate = () => {
-  const serial = Math.floor((new Date() / 1000) / (airacCycleDurationDays * 24 * 60 * 60))
-  const days = serial * airacCycleDurationDays;
-  let date = new Date(0)
-  return new Date(date.setDate(date.getDate() + days))
-}
-
-const airacGetOrdinal = (date) => {
-  const dayOfYear = Math.floor((date - new Date(date.getUTCFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-  return String(Math.floor((dayOfYear - 1) / airacCycleDurationDays) + 1).padStart(2, '0');
-}
 
 export default {
   setup() {
@@ -273,14 +260,7 @@ export default {
     const features = format.readFeatures(geoJson, { featureProjection: "ESPG:4326" })
     const cities = format.readFeatures(geoJsonCities, { featureProjection: "ESPG:4326" })
 
-    const airacOrdinal = airacGetOrdinal(airacGetEffectiveDate())
-    let yy = new Date().getUTCFullYear().toString().substr(-2)
-
-    if (parseInt(airacOrdinal) === 13) {
-      yy -= 1
-    }
-
-    let airacCycle = yy + airacOrdinal
+    const airacCycle = airacGetIdentifier(new Date())
 
     const flightTiles = ref(`https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=${airacCycle}/aero/latest`)
 
